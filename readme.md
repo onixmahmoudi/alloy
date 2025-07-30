@@ -104,6 +104,7 @@ Clone the repo, then:
 
 - C#: @alloy-js/csharp
 - Java: @alloy-js/java
+- PHP: @alloy-js/php
 - TypeScript: @alloy-js/typescript
 
 More are coming soon.
