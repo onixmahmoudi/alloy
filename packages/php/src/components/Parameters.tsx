@@ -1,14 +1,14 @@
 import { Children } from "@alloy-js/core/jsx-runtime";
 
-export interface Parameter {
+export type Parameter = {
   name: string;
   type?: string;
   defaultValue?: Children;
-}
+};
 
-export interface ParametersProps {
+export type ParametersProps = {
   parameters?: Parameter[];
-}
+};
 
 /**
  * Renders PHP function/method parameters

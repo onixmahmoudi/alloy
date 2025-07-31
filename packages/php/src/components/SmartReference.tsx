@@ -1,7 +1,8 @@
 import { Children } from "@alloy-js/core";
 import { PhpOutputSymbol } from "../symbols/index.js";
-import { useImportManager } from "./ImportManager.js";
+import { ImportManager, useImportManager } from "./ImportManager.js";
 import { useNamespace } from "./Namespace.js";
+import { SourceFile } from "./SourceFile.jsx";
 
 export interface SmartReferenceProps {
   /** Symbol to reference */
@@ -125,7 +126,7 @@ export function ImportOptimizedSourceFile(
       autoResolveConflicts={true}
       removeUnused={true}
     >
-      <php.SourceFile path={path}>{children}</php.SourceFile>
+      <SourceFile path={path}>{children}</SourceFile>
     </ImportManager>
   );
 }

@@ -1,5 +1,4 @@
 import { Children, SourceDirectory } from "@alloy-js/core";
-import { GitHubActions, GitHubActionsProps } from "./CiConfig.js";
 import { ComposerJson, ComposerJsonProps } from "./ComposerJson.js";
 import { GitIgnore, GitIgnoreProps } from "./GitIgnore.js";
 import { Psr4Structure, Psr4StructureProps } from "./Psr4Directory.js";
@@ -21,8 +20,6 @@ export interface BaseProjectProps {
   psr4?: Psr4StructureProps;
   /** Testing configuration */
   testing?: TestingStructureProps;
-  /** CI/CD configuration */
-  ci?: GitHubActionsProps;
   /** Include development files */
   devFiles?: boolean;
   /** Children components */
@@ -41,7 +38,6 @@ export function BaseProject(props: BaseProjectProps) {
     gitignore = {},
     psr4,
     testing,
-    ci,
     devFiles = true,
     children,
   } = props;
@@ -59,9 +55,6 @@ export function BaseProject(props: BaseProjectProps) {
 
           {/* README */}
           {readme && <ReadmeMarkdown {...readme} />}
-
-          {/* CI/CD */}
-          {ci && <GitHubActions {...ci} />}
         </>
       )}
 
@@ -216,22 +209,6 @@ composer cs-check
           unit: true,
           integration: true,
         },
-      }}
-      ci={{
-        name: "Tests",
-        phpVersions: ["8.0", "8.1", "8.2"],
-        dependencies: ["lowest", "locked", "highest"],
-        coverage: true,
-        additionalSteps: [
-          {
-            name: "PHPStan",
-            run: "composer phpstan",
-          },
-          {
-            name: "Code Style",
-            run: "composer cs-check",
-          },
-        ],
       }}
     />
   );

@@ -1,13 +1,11 @@
 import {
-  Children,
   Declaration as CoreDeclaration,
   DeclarationProps as CoreDeclarationProps,
 } from "@alloy-js/core";
 
-export interface DeclarationProps extends CoreDeclarationProps {
+export type DeclarationProps = CoreDeclarationProps & {
   name: string;
-  children?: Children;
-}
+};
 
 /**
  * Base declaration component for PHP language elements

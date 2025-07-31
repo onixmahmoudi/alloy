@@ -1,14 +1,12 @@
 import { Children } from "@alloy-js/core";
-import { usePhpNamePolicy } from "../name-policy.js";
 import {
   Class,
+  Constructor,
   Interface,
   Method,
   Property,
-  Constructor,
-  Trait,
-  Enum
 } from "../components/index.js";
+import { usePhpNamePolicy } from "../name-policy.js";
 
 export interface SingletonPatternProps {
   /** Class name */
@@ -39,9 +37,7 @@ export function SingletonPattern(props: SingletonPatternProps) {
       />
 
       {/* Private constructor */}
-      {privateConstructor && (
-        <Constructor visibility="private" />
-      )}
+      {privateConstructor && <Constructor visibility="private" />}
 
       {/* Prevent cloning */}
       <Method name="__clone" visibility="private" returnType="void">
@@ -104,8 +100,12 @@ export function FactoryPattern(props: FactoryPatternProps) {
         returnType={productType}
       >
         {`switch ($type) {
-${products.map(product => `    case '${product.key}':
-        return new ${product.className}();`).join('\n')}
+${products
+  .map(
+    (product) => `    case '${product.key}':
+        return new ${product.className}();`,
+  )
+  .join("\n")}
     default:
         throw new \\InvalidArgumentException("Unknown product type: $type");
 }`}
@@ -118,7 +118,7 @@ ${products.map(product => `    case '${product.key}':
         static={true}
         returnType="array"
       >
-        {`return [${products.map(p => `'${p.key}'`).join(', ')}];`}
+        {`return [${products.map((p) => `'${p.key}'`).join(", ")}];`}
       </Method>
     </Class>
   );
@@ -137,12 +137,12 @@ export interface ObserverPatternProps {
  * Generates Observer pattern implementation
  */
 export function ObserverPattern(props: ObserverPatternProps) {
-  const { 
-    subjectName, 
-    observerName = "Observer", 
-    eventTypes = ["update"] 
+  const {
+    subjectName,
+    observerName = "Observer",
+    eventTypes = ["update"],
   } = props;
-  
+
   const namePolicy = usePhpNamePolicy();
   const subjectClass = namePolicy.getName(subjectName, "class");
   const observerInterface = namePolicy.getName(observerName, "interface");
@@ -151,14 +151,14 @@ export function ObserverPattern(props: ObserverPatternProps) {
     <>
       {/* Observer Interface */}
       <Interface name={observerInterface}>
-        {eventTypes.map(eventType => (
+        {eventTypes.map((eventType) => (
           <Method
             key={eventType}
             name={eventType}
             visibility="public"
             parameters={[
               { name: "subject", type: subjectClass },
-              { name: "data", type: "mixed", defaultValue: "null" }
+              { name: "data", type: "mixed", defaultValue: "null" },
             ]}
             returnType="void"
           />
@@ -182,7 +182,7 @@ export function ObserverPattern(props: ObserverPatternProps) {
           parameters={[{ name: "observer", type: observerInterface }]}
           returnType="void"
         >
-          $this->observers[] = $observer;
+          {`$this->observers[] = $observer;`}
         </Method>
 
         {/* Detach observer */}
@@ -204,7 +204,7 @@ if ($key !== false) {
           visibility="protected"
           parameters={[
             { name: "eventType", type: "string" },
-            { name: "data", type: "mixed", defaultValue: "null" }
+            { name: "data", type: "mixed", defaultValue: "null" },
           ]}
           returnType="void"
         >
@@ -243,14 +243,14 @@ export function RepositoryPattern(props: RepositoryPatternProps) {
     entityName,
     repositoryName,
     includeInterface = true,
-    customMethods = []
+    customMethods = [],
   } = props;
 
   const namePolicy = usePhpNamePolicy();
   const entityClass = namePolicy.getName(entityName, "class");
   const repoClass = namePolicy.getName(
-    repositoryName || `${entityName}Repository`, 
-    "class"
+    repositoryName || `${entityName}Repository`,
+    "class",
   );
   const repoInterface = `${repoClass}Interface`;
 
@@ -266,11 +266,7 @@ export function RepositoryPattern(props: RepositoryPatternProps) {
             returnType={`?${entityClass}`}
           />
 
-          <Method
-            name="findAll"
-            visibility="public"
-            returnType="array"
-          />
+          <Method name="findAll" visibility="public" returnType="array" />
 
           <Method
             name="save"
@@ -286,7 +282,7 @@ export function RepositoryPattern(props: RepositoryPatternProps) {
             returnType="void"
           />
 
-          {customMethods.map(method => (
+          {customMethods.map((method) => (
             <Method
               key={method.name}
               name={method.name}
@@ -299,23 +295,19 @@ export function RepositoryPattern(props: RepositoryPatternProps) {
       )}
 
       {/* Repository Implementation */}
-      <Class 
-        name={repoClass} 
+      <Class
+        name={repoClass}
         implements={includeInterface ? [repoInterface] : undefined}
       >
         {/* Database connection property */}
-        <Property
-          name="connection"
-          visibility="private"
-          type="\\PDO"
-        />
+        <Property name="connection" visibility="private" type="\\PDO" />
 
         {/* Constructor */}
         <Constructor
           visibility="public"
           parameters={[{ name: "connection", type: "\\PDO" }]}
         >
-          $this->connection = $connection;
+          {`$this->connection = $connection;`}
         </Constructor>
 
         {/* Find by ID */}
@@ -330,11 +322,7 @@ return null;`}
         </Method>
 
         {/* Find all */}
-        <Method
-          name="findAll"
-          visibility="public"
-          returnType="array"
-        >
+        <Method name="findAll" visibility="public" returnType="array">
           {`// TODO: Implement findAll for ${entityClass}
 return [];`}
         </Method>
@@ -360,7 +348,7 @@ return [];`}
         </Method>
 
         {/* Custom methods */}
-        {customMethods.map(method => (
+        {customMethods.map((method) => (
           <Method
             key={method.name}
             name={method.name}
@@ -400,7 +388,7 @@ export function ValueObjectPattern(props: ValueObjectPatternProps) {
   return (
     <Class name={className} final={true}>
       {/* Properties */}
-      {properties.map(prop => (
+      {properties.map((prop) => (
         <Property
           key={prop.name}
           name={prop.name}
@@ -413,49 +401,53 @@ export function ValueObjectPattern(props: ValueObjectPatternProps) {
       {/* Constructor */}
       <Constructor
         visibility="public"
-        parameters={properties.map(prop => ({
+        parameters={properties.map((prop) => ({
           name: prop.name,
-          type: prop.type
+          type: prop.type,
         }))}
       >
-        {includeValidation && properties.some(p => p.validation) && 
+        {includeValidation &&
+          properties.some((p) => p.validation) &&
           properties
-            .filter(p => p.validation)
-            .map(prop => `$this->validate${namePolicy.getName(prop.name, "class")}($${prop.name});`)
-            .join('\n')
-        }
-        
-        {properties.map(prop => 
-          `$this->${prop.name} = $${prop.name};`
-        ).join('\n')}
+            .filter((p) => p.validation)
+            .map(
+              (prop) =>
+                `$this->validate${namePolicy.getName(prop.name, "class")}($${prop.name});`,
+            )
+            .join("\n")}
+
+        {properties
+          .map((prop) => `$this->${prop.name} = $${prop.name};`)
+          .join("\n")}
       </Constructor>
 
       {/* Getters */}
-      {properties.map(prop => (
+      {properties.map((prop) => (
         <Method
           key={`get${prop.name}`}
           name={`get${namePolicy.getName(prop.name, "class")}`}
           visibility="public"
           returnType={prop.type}
         >
-          return $this->{prop.name};
+          {`return $this->${prop.name};`}
         </Method>
       ))}
 
       {/* Validation methods */}
-      {includeValidation && properties
-        .filter(prop => prop.validation)
-        .map(prop => (
-          <Method
-            key={`validate${prop.name}`}
-            name={`validate${namePolicy.getName(prop.name, "class")}`}
-            visibility="private"
-            parameters={[{ name: "value", type: prop.type }]}
-            returnType="void"
-          >
-            {prop.validation || `// TODO: Add validation for ${prop.name}`}
-          </Method>
-        ))}
+      {includeValidation &&
+        properties
+          .filter((prop) => prop.validation)
+          .map((prop) => (
+            <Method
+              key={`validate${prop.name}`}
+              name={`validate${namePolicy.getName(prop.name, "class")}`}
+              visibility="private"
+              parameters={[{ name: "value", type: prop.type }]}
+              returnType="void"
+            >
+              {prop.validation || `// TODO: Add validation for ${prop.name}`}
+            </Method>
+          ))}
 
       {/* Equals method */}
       <Method
@@ -464,21 +456,17 @@ export function ValueObjectPattern(props: ValueObjectPatternProps) {
         parameters={[{ name: "other", type: className }]}
         returnType="bool"
       >
-        {`return ${properties.map(prop => 
-          `$this->${prop.name} === $other->${prop.name}`
-        ).join(' && ')};`}
+        {`return ${properties
+          .map((prop) => `$this->${prop.name} === $other->${prop.name}`)
+          .join(" && ")};`}
       </Method>
 
       {/* toString method */}
-      <Method
-        name="__toString"
-        visibility="public"
-        returnType="string"
-      >
+      <Method name="__toString" visibility="public" returnType="string">
         {`return json_encode([
-${properties.map(prop => `    '${prop.name}' => $this->${prop.name}`).join(',\n')}
+${properties.map((prop) => `    '${prop.name}' => $this->${prop.name}`).join(",\n")}
 ]);`}
       </Method>
     </Class>
   );
-} 
+}

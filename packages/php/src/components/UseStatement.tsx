@@ -16,7 +16,7 @@ export function UseStatements(props: UseStatementsProps): Children {
   return (
     <>
       {props.uses.map((useSymbol) => (
-        <UseStatement key={useSymbol.fullyQualifiedName} use={useSymbol} />
+        <UseStatement use={useSymbol} />
       ))}
     </>
   );

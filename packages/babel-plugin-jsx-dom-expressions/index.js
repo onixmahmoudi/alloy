@@ -1227,7 +1227,9 @@ function transformFragmentChildren(path, children, results, config) {
         if (v.length) memo.push(t__namespace.stringLiteral(v));
       } else {
         const child = transformNode(path, { fragmentChild: true});
-        memo.push(getCreateTemplate(config, path, child)(path, child, true));
+        if(child) {
+          memo.push(getCreateTemplate(config, path, child)(path, child, true));
+        }
       }
       return memo;
     }, []);

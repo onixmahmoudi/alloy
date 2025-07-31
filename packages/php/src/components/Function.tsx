@@ -4,9 +4,10 @@ import { Declaration, DeclarationProps } from "./Declaration.js";
 import { Name } from "./Name.js";
 import { Parameters, ParametersProps } from "./Parameters.js";
 
-export interface FunctionProps extends DeclarationProps, ParametersProps {
-  returnType?: string;
-}
+export type FunctionProps = DeclarationProps &
+  ParametersProps & {
+    returnType?: string;
+  };
 
 /**
  * Represents a PHP global function declaration
@@ -19,7 +20,7 @@ export function Function(props: FunctionProps) {
       function <Name>{name}</Name>
       <Parameters {...props} />
       {props.returnType && `: ${props.returnType}`}
-      <Block>{props.children}</Block>
+      <Block newline>{props.children}</Block>
     </Declaration>
   );
 }

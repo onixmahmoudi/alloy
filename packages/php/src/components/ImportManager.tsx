@@ -106,12 +106,12 @@ export function ImportManager(props: ImportManagerProps) {
 
   // Get all imports
   function getImports(): ImportRecord[] {
-    return Array.from(imports.values());
+    return Array.from(imports.values()) as ImportRecord[];
   }
 
   // Get optimized imports (grouped and sorted)
   function getOptimizedImports(): ImportRecord[] {
-    let importList = Array.from(imports.values());
+    let importList = Array.from(imports.values()) as ImportRecord[];
 
     // Remove unused if configured
     if (removeUnused) {
@@ -201,7 +201,7 @@ export function ImportManager(props: ImportManagerProps) {
       nameCount.set(name, (nameCount.get(name) || 0) + 1);
 
       if (nameCount.get(name)! > 1) {
-        conflictedImports.push(importRecord);
+        conflictedImports.push(importRecord as ImportRecord);
       }
     }
 

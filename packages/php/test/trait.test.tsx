@@ -1,12 +1,13 @@
-import { render } from "@alloy-js/core";
+import * as coretest from "@alloy-js/core/testing";
 import { describe, expect, it } from "vitest";
 import * as php from "../src/index.js";
+import { findFile, testRender } from "./utils.jsx";
 
 describe("PHP Trait", () => {
   it("should render a basic trait", () => {
-    const result = render(
-      <php.SourceFile path="Loggable.php">
-        <php.Namespace name="App\Traits">
+    const result = testRender(
+      <php.Namespace name="App\Traits">
+        <php.SourceFile path="Loggable.php">
           <php.Trait name="Loggable">
             <php.Method
               name="log"
@@ -16,31 +17,32 @@ describe("PHP Trait", () => {
               error_log($message);
             </php.Method>
           </php.Trait>
-        </php.Namespace>
-      </php.SourceFile>,
-      { namePolicy: php.createPhpNamePolicy() },
+        </php.SourceFile>
+      </php.Namespace>,
     );
 
-    expect(result.contents).toMatchInlineSnapshot(`
-      "<?php
+    const file = findFile(result, "Loggable.php");
+    expect(file).toBeDefined();
+    expect(file!.contents).toBe(coretest.d`
+<?php
 
-      namespace App\\Traits;
+namespace App\\Traits;
 
-      trait Loggable
-      {
-          public function log(string $message)
-          {
-              error_log($message);
-          }
-      }
-      "
+trait Loggable
+{
+  public function log(string $message)
+  {
+    error_log($message);
+  }
+
+}
     `);
   });
 
   it("should render trait with used traits", () => {
-    const result = render(
-      <php.SourceFile path="ComplexTrait.php">
-        <php.Namespace name="App\Traits">
+    const result = testRender(
+      <php.Namespace name="App\Traits">
+        <php.SourceFile path="ComplexTrait.php">
           <php.Trait
             name="ComplexTrait"
             uses={["LoggableTrait", "CacheableTrait"]}
@@ -49,27 +51,28 @@ describe("PHP Trait", () => {
               // Complex logic
             </php.Method>
           </php.Trait>
-        </php.Namespace>
-      </php.SourceFile>,
-      { namePolicy: php.createPhpNamePolicy() },
+        </php.SourceFile>
+      </php.Namespace>,
     );
 
-    expect(result.contents).toMatchInlineSnapshot(`
-      "<?php
+    const file = findFile(result, "ComplexTrait.php");
+    expect(file).toBeDefined();
+    expect(file!.contents).toBe(coretest.d`
+<?php
 
-      namespace App\\Traits;
+namespace App\\Traits;
 
-      trait ComplexTrait
-      {
-          use LoggableTrait;
-          use CacheableTrait;
+trait ComplexTrait
+{
+  use LoggableTrait;
+  use CacheableTrait;
 
-          public function complexMethod()
-          {
-              // Complex logic
-          }
-      }
-      "
+  public function complexMethod()
+  {
+    // Complex logic
+  }
+
+}
     `);
   });
 });

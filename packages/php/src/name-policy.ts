@@ -13,7 +13,8 @@ export type PhpElements =
   | "variable"
   | "function"
   | "namespace"
-  | "parameter";
+  | "parameter"
+  | "enum-member";
 
 // PHP reserved words that need to be avoided
 const PHP_RESERVED_WORDS = new Set([

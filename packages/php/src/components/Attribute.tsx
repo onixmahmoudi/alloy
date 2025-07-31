@@ -23,7 +23,7 @@ export function Attribute(props: AttributeProps) {
         {props.arguments!.map((arg, index) => (
           <>
             {index > 0 && ", "}
-            <Show when={arg.name}>{arg.name}: </Show>
+            <Show when={!!arg.name}>{arg.name}: </Show>
             {arg.value}
           </>
         ))}
@@ -45,8 +45,8 @@ export interface AttributeListProps {
 export function AttributeList(props: AttributeListProps) {
   return (
     <>
-      {props.attributes.map((attr, index) => (
-        <Attribute key={index} {...attr} />
+      {props.attributes.map((attr) => (
+        <Attribute {...attr} />
       ))}
     </>
   );

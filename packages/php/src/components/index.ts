@@ -1,5 +1,5 @@
+export * from "./AdvancedUseStatement.js";
 export * from "./Attribute.js";
-export * from "./CiConfig.js";
 export * from "./Class.js";
 export * from "./ComposerJson.js";
 export * from "./Constant.js";
@@ -8,6 +8,7 @@ export * from "./Declaration.js";
 export * from "./Enum.js";
 export * from "./Function.js";
 export * from "./GitIgnore.js";
+export * from "./ImportManager.js";
 export * from "./Interface.js";
 export * from "./Method.js";
 export * from "./Name.js";
@@ -19,14 +20,10 @@ export * from "./Property.js";
 export * from "./Psr4Directory.js";
 export * from "./ReadmeMarkdown.js";
 export * from "./Reference.js";
+export * from "./SmartReference.js";
 export * from "./SourceFile.js";
 export * from "./TestingStructure.js";
 export * from "./Trait.js";
 export * from "./TypeHint.js";
 export * from "./UseStatement.js";
 export * from "./Variable.js";
-
-// Phase 7: Advanced Import System
-export * from "./AdvancedUseStatement.js";
-export * from "./ImportManager.js";
-export * from "./SmartReference.js";

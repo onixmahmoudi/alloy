@@ -1,12 +1,13 @@
-import { render } from "@alloy-js/core";
+import * as coretest from "@alloy-js/core/testing";
 import { describe, expect, it } from "vitest";
 import * as php from "../src/index.js";
+import { findFile, testRender } from "./utils.js";
 
 describe("PHP Interface", () => {
   it("should render a basic interface", () => {
-    const result = render(
-      <php.SourceFile path="UserInterface.php">
-        <php.Namespace name="App\Contracts">
+    const result = testRender(
+      <php.Namespace name="App\Contracts">
+        <php.SourceFile path="UserInterface.php">
           <php.Interface name="UserInterface">
             <php.Method
               name="getName"
@@ -15,28 +16,28 @@ describe("PHP Interface", () => {
               abstract
             />
           </php.Interface>
-        </php.Namespace>
-      </php.SourceFile>,
-      { namePolicy: php.createPhpNamePolicy() },
+        </php.SourceFile>
+      </php.Namespace>,
     );
 
-    expect(result.contents).toMatchInlineSnapshot(`
-      "<?php
+    const file = findFile(result, "UserInterface.php");
+    expect(file).toBeDefined();
+    expect(file!.contents).toBe(coretest.d`
+<?php
 
-      namespace App\\Contracts;
+namespace App\\Contracts;
 
-      interface UserInterface
-      {
-          public abstract function getName(): string;
-      }
-      "
+interface UserInterface
+{
+  public abstract function getName(): string;
+}
     `);
   });
 
   it("should render interface with extends", () => {
-    const result = render(
-      <php.SourceFile path="AdminInterface.php">
-        <php.Namespace name="App\Contracts">
+    const result = testRender(
+      <php.Namespace name="App\Contracts">
+        <php.SourceFile path="AdminInterface.php">
           <php.Interface
             name="AdminInterface"
             extends={["UserInterface", "ManagerInterface"]}
@@ -48,21 +49,21 @@ describe("PHP Interface", () => {
               abstract
             />
           </php.Interface>
-        </php.Namespace>
-      </php.SourceFile>,
-      { namePolicy: php.createPhpNamePolicy() },
+        </php.SourceFile>
+      </php.Namespace>,
     );
 
-    expect(result.contents).toMatchInlineSnapshot(`
-      "<?php
+    const file = findFile(result, "AdminInterface.php");
+    expect(file).toBeDefined();
+    expect(file!.contents).toBe(coretest.d`
+<?php
 
-      namespace App\\Contracts;
+namespace App\\Contracts;
 
-      interface AdminInterface extends UserInterface, ManagerInterface
-      {
-          public abstract function adminAction(): void;
-      }
-      "
+interface AdminInterface extends UserInterface, ManagerInterface
+{
+  public abstract function adminAction(): void;
+}
     `);
   });
 });

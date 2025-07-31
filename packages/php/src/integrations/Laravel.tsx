@@ -95,7 +95,7 @@ export function LaravelModel(props: LaravelModelProps) {
   return (
     <Class name={className} extends="Model">
       {/* Table name */}
-      <Show when={table && table !== namePolicy.getName(name, "variable")}>
+      <Show when={!!table && table !== namePolicy.getName(name, "variable")}>
         <Property
           name="table"
           visibility="protected"
@@ -159,7 +159,6 @@ export function LaravelModel(props: LaravelModelProps) {
       {/* Additional properties */}
       {additionalProperties.map((prop) => (
         <Property
-          key={prop.name}
           name={prop.name}
           visibility={prop.visibility || "protected"}
           defaultValue={prop.value}
@@ -168,22 +167,22 @@ export function LaravelModel(props: LaravelModelProps) {
 
       {/* Relationships */}
       {relationships.map((rel) => (
-        <LaravelRelationshipMethod key={rel.name} {...rel} />
+        <LaravelRelationshipMethod {...rel} />
       ))}
 
       {/* Scopes */}
       {scopes.map((scope) => (
-        <LaravelScopeMethod key={scope.name} {...scope} />
+        <LaravelScopeMethod {...scope} />
       ))}
 
       {/* Accessors */}
       {accessors.map((accessor) => (
-        <LaravelAccessorMethod key={accessor.attribute} {...accessor} />
+        <LaravelAccessorMethod {...accessor} />
       ))}
 
       {/* Mutators */}
       {mutators.map((mutator) => (
-        <LaravelMutatorMethod key={mutator.attribute} {...mutator} />
+        <LaravelMutatorMethod {...mutator} />
       ))}
 
       {children}
@@ -365,7 +364,6 @@ export function LaravelController(props: LaravelControllerProps) {
 
       {actions.map((action) => (
         <Method
-          key={action.name}
           name={action.name}
           visibility="public"
           parameters={action.parameters}

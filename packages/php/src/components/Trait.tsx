@@ -1,11 +1,11 @@
-import { Block, Children, Scope, Show } from "@alloy-js/core";
+import { Block, Scope, Show } from "@alloy-js/core";
 import { usePhpNamePolicy } from "../name-policy.js";
 import { Declaration, DeclarationProps } from "./Declaration.js";
 import { Name } from "./Name.js";
 
-export interface TraitProps extends DeclarationProps {
-  uses?: Children[]; // Other traits this trait uses
-}
+export type TraitProps = DeclarationProps & {
+  uses?: string[]; // Other traits this trait uses
+};
 
 /**
  * Represents a PHP trait declaration
@@ -16,7 +16,7 @@ export function Trait(props: TraitProps) {
   return (
     <Declaration {...props} name={name}>
       trait <Name>{name}</Name>
-      <Block>
+      <Block newline>
         <Show when={props.uses && props.uses.length > 0}>
           {props.uses!.map((usedTrait, index) => (
             <>

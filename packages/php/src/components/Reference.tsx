@@ -1,9 +1,13 @@
-import { Reference as CoreReference, RefOf } from "@alloy-js/core";
-import { PhpOutputSymbol } from "../symbols/index.js";
+import * as core from "@alloy-js/core";
+import { ref } from "../symbols/reference.js";
 
-/**
- * PHP-specific reference component that handles FQN resolution
- */
-export function Reference(ref: RefOf<PhpOutputSymbol>) {
-  return <CoreReference ref={ref} />;
+export interface ReferenceProps {
+  refkey: core.Refkey;
+}
+
+// used to resolve refkey references within source files
+export function Reference({ refkey }: ReferenceProps) {
+  const reference = ref(refkey);
+
+  return <>{reference}</>;
 }

@@ -1,4 +1,4 @@
-import { OutputScope } from "@alloy-js/core";
+import { OutputScope, OutputScopeOptions } from "@alloy-js/core";
 
 /**
  * Represents a PHP namespace scope for symbol management
@@ -6,8 +6,11 @@ import { OutputScope } from "@alloy-js/core";
 export class PhpNamespaceScope extends OutputScope {
   readonly namespaceName: string;
 
-  constructor(namespaceName: string) {
-    super();
+  constructor(namespaceName: string, options: OutputScopeOptions = {}) {
+    super(namespaceName, {
+      ...options,
+      kind: "namespace",
+    });
     this.namespaceName = namespaceName;
   }
 

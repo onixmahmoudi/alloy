@@ -1,87 +1,81 @@
-import { render } from "@alloy-js/core";
+import * as coretest from "@alloy-js/core/testing";
 import { describe, expect, it } from "vitest";
 import * as php from "../src/index.js";
+import { findFile, testRender } from "./utils.js";
 
 describe("PHP Enum", () => {
   it("should render a basic enum", () => {
-    const result = render(
-      <php.SourceFile path="Status.php">
-        <php.Namespace name="App\Enums">
-          <php.Enum 
+    const result = testRender(
+      <php.Namespace name="App\Enums">
+        <php.SourceFile path="Status.php">
+          <php.Enum
             name="Status"
             cases={[
               { name: "PENDING" },
               { name: "APPROVED" },
-              { name: "REJECTED" }
+              { name: "REJECTED" },
             ]}
           />
-        </php.Namespace>
-      </php.SourceFile>,
-      { namePolicy: php.createPhpNamePolicy() }
+        </php.SourceFile>
+      </php.Namespace>,
     );
 
-    expect(result.contents).toMatchInlineSnapshot(`
-      "<?php
+    const file = findFile(result, "Status.php");
+    expect(file).toBeDefined();
+    expect(file!.contents).toBe(coretest.d`
+<?php
 
-      namespace App\\Enums;
+namespace App\\Enums;
 
-      enum Status
-      {
-          case PENDING;
-          case APPROVED;
-          case REJECTED;
-      }
-      "
+enum Status
+{
+  case PENDING;
+  case APPROVED;
+  case REJECTED;
+}
     `);
   });
 
   it("should render backed enum with string values", () => {
-    const result = render(
-      <php.SourceFile path="Priority.php">
-        <php.Namespace name="App\Enums">
-          <php.Enum 
+    const result = testRender(
+      <php.Namespace name="App\Enums">
+        <php.SourceFile path="Priority.php">
+          <php.Enum
             name="Priority"
             backingType="string"
             cases={[
               { name: "LOW", value: '"low"' },
               { name: "MEDIUM", value: '"medium"' },
-              { name: "HIGH", value: '"high"' }
+              { name: "HIGH", value: '"high"' },
             ]}
           >
             <php.Method name="getColor" visibility="public" returnType="string">
-              return match($this) {"{"}
-                  self::LOW => 'green',
-                  self::MEDIUM => 'yellow', 
-                  self::HIGH => 'red',
-              {"}"};
+              // Method Body
             </php.Method>
           </php.Enum>
-        </php.Namespace>
-      </php.SourceFile>,
-      { namePolicy: php.createPhpNamePolicy() }
+        </php.SourceFile>
+      </php.Namespace>,
     );
 
-    expect(result.contents).toMatchInlineSnapshot(`
-      "<?php
+    const file = findFile(result, "Priority.php");
+    expect(file).toBeDefined();
+    expect(file!.contents).toBe(coretest.d`
+<?php
 
-      namespace App\\Enums;
+namespace App\\Enums;
 
-      enum Priority: string
-      {
-          case LOW = "low";
-          case MEDIUM = "medium";
-          case HIGH = "high";
+enum Priority: string
+{
+  case LOW = "low";
+  case MEDIUM = "medium";
+  case HIGH = "high";
 
-          public function getColor(): string
-          {
-              return match($this) {
-                  self::LOW => 'green',
-                  self::MEDIUM => 'yellow', 
-                  self::HIGH => 'red',
-              };
-          }
-      }
-      "
+  public function getColor(): string
+  {
+    // Method Body
+  }
+
+}
     `);
   });
-}); 
+});

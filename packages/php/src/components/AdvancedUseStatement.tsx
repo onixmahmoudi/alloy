@@ -29,7 +29,7 @@ export function OptimizedUseStatements(props: UseStatementGroupProps = {}) {
         </>
       )}
       {addBlankLines && <hbr />}
-      {imports.map((importRecord, index) => (
+      {imports.map((importRecord) => (
         <>
           use {importRecord.importPath}
           {importRecord.alias && <> as {importRecord.alias}</>};

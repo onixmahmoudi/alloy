@@ -2,19 +2,19 @@ import {
   ComponentContext,
   SourceFile as CoreSourceFile,
   createContext,
-  OutputSymbol,
   reactive,
   Scope,
   Show,
+  useContext,
 } from "@alloy-js/core";
 import { Children } from "@alloy-js/core/jsx-runtime";
-import { PhpOutputSymbol } from "../symbols/index.js";
+import { PhpOutputSymbol } from "../symbols/php-output-symbol.js";
 import { useNamespace } from "./Namespace.js";
 import { Reference } from "./Reference.js";
 import { UseStatements, UseSymbol } from "./UseStatement.js";
 
 export interface SourceFileContext {
-  addUse(symbol: OutputSymbol): string;
+  addUse(symbol: PhpOutputSymbol): string;
 }
 
 export const SourceFileContext: ComponentContext<SourceFileContext> =
@@ -34,7 +34,7 @@ export function SourceFile(props: SourceFileProps) {
   // Collection of use statements
   const useRecords: UseSymbol[] = reactive([]);
   // Map a symbol to imported name, keep track of already imported symbols
-  const importedSymbols = new Map<OutputSymbol, string>();
+  const importedSymbols = new Map<PhpOutputSymbol, string>();
 
   // Add use statement to file if not already imported, returns name of imported symbol
   function addUse(symbol: PhpOutputSymbol): string {
@@ -63,7 +63,7 @@ export function SourceFile(props: SourceFileProps) {
       {"<?php"}
       <hbr />
       <hbr />
-      <Show when={namespaceCtx}>
+      <Show when={!!namespaceCtx}>
         namespace {namespaceCtx?.qualifiedName};
         <hbr />
         <hbr />
@@ -79,4 +79,8 @@ export function SourceFile(props: SourceFileProps) {
       </SourceFileContext.Provider>
     </CoreSourceFile>
   );
+}
+
+export function useSourceFile(): SourceFileContext | undefined {
+  return useContext(SourceFileContext);
 }

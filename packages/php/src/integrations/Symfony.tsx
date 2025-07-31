@@ -1,6 +1,12 @@
-import { Children, Show } from "@alloy-js/core";
+import { Children } from "@alloy-js/core";
+import {
+  Attribute,
+  Class,
+  Constructor,
+  Method,
+  Property,
+} from "../components/index.js";
 import { usePhpNamePolicy } from "../name-policy.js";
-import { Class, Method, Property, Constructor, Attribute } from "../components/index.js";
 
 export interface SymfonyEntityProps {
   /** Entity name */
@@ -26,7 +32,14 @@ export interface SymfonyEntityProps {
 
 export interface SymfonyField {
   name: string;
-  type: "string" | "integer" | "datetime" | "boolean" | "text" | "decimal" | "json";
+  type:
+    | "string"
+    | "integer"
+    | "datetime"
+    | "boolean"
+    | "text"
+    | "decimal"
+    | "json";
   length?: number;
   nullable?: boolean;
   unique?: boolean;
@@ -50,7 +63,13 @@ export interface SymfonyRelationship {
 }
 
 export interface SymfonyLifecycleCallback {
-  event: "PrePersist" | "PostPersist" | "PreUpdate" | "PostUpdate" | "PreRemove" | "PostRemove";
+  event:
+    | "PrePersist"
+    | "PostPersist"
+    | "PreUpdate"
+    | "PostUpdate"
+    | "PreRemove"
+    | "PostRemove";
   method: string;
 }
 
@@ -66,7 +85,7 @@ export function SymfonyEntity(props: SymfonyEntityProps) {
     relationships = [],
     lifecycleCallbacks = [],
     additionalAttributes = [],
-    children
+    children,
   } = props;
 
   const namePolicy = usePhpNamePolicy();
@@ -78,7 +97,9 @@ export function SymfonyEntity(props: SymfonyEntityProps) {
       <Attribute
         name="Entity"
         arguments={[
-          ...(repositoryClass ? [{ name: "repositoryClass", value: `${repositoryClass}::class` }] : [])
+          ...(repositoryClass ?
+            [{ name: "repositoryClass", value: `${repositoryClass}::class` }]
+          : []),
         ]}
       />
 
@@ -92,7 +113,7 @@ export function SymfonyEntity(props: SymfonyEntityProps) {
 
       {/* Additional attributes */}
       {additionalAttributes.map((attr, index) => (
-        <Attribute key={index} name={attr.name} arguments={attr.arguments} />
+        <Attribute name={attr.name} arguments={attr.arguments} />
       ))}
 
       <Class name={className}>
@@ -100,36 +121,38 @@ export function SymfonyEntity(props: SymfonyEntityProps) {
         <SymfonyIdField />
 
         {/* Fields */}
-        {fields.map(field => (
-          <SymfonyFieldProperty key={field.name} {...field} />
+        {fields.map((field) => (
+          <SymfonyFieldProperty {...field} />
         ))}
 
         {/* Relationships */}
-        {relationships.map(rel => (
-          <SymfonyRelationshipProperty key={rel.name} {...rel} />
+        {relationships.map((rel) => (
+          <SymfonyRelationshipProperty {...rel} />
         ))}
 
         {/* Constructor */}
         <Constructor visibility="public">
           {relationships
-            .filter(rel => rel.type === "OneToMany" || rel.type === "ManyToMany")
-            .map(rel => `$this->${rel.name} = new ArrayCollection();`)
+            .filter(
+              (rel) => rel.type === "OneToMany" || rel.type === "ManyToMany",
+            )
+            .map((rel) => `$this->${rel.name} = new ArrayCollection();`)
             .join("\n")}
         </Constructor>
 
         {/* Getters and setters */}
-        {fields.map(field => (
-          <SymfonyFieldMethods key={field.name} {...field} />
+        {fields.map((field) => (
+          <SymfonyFieldMethods {...field} />
         ))}
 
         {/* Relationship methods */}
-        {relationships.map(rel => (
-          <SymfonyRelationshipMethods key={rel.name} {...rel} />
+        {relationships.map((rel) => (
+          <SymfonyRelationshipMethods {...rel} />
         ))}
 
         {/* Lifecycle callback methods */}
-        {lifecycleCallbacks.map(callback => (
-          <SymfonyLifecycleMethod key={callback.method} {...callback} />
+        {lifecycleCallbacks.map((callback) => (
+          <SymfonyLifecycleMethod {...callback} />
         ))}
 
         {children}
@@ -146,7 +169,10 @@ function SymfonyIdField() {
     <>
       <Attribute name="Id" />
       <Attribute name="GeneratedValue" />
-      <Attribute name="Column" arguments={[{ name: "type", value: '"integer"' }]} />
+      <Attribute
+        name="Column"
+        arguments={[{ name: "type", value: '"integer"' }]}
+      />
       <Property
         name="id"
         visibility="private"
@@ -170,7 +196,7 @@ function SymfonyFieldProperty(props: SymfonyField) {
     default: defaultValue,
     columnName,
     precision,
-    scale
+    scale,
   } = props;
 
   const namePolicy = usePhpNamePolicy();
@@ -178,7 +204,7 @@ function SymfonyFieldProperty(props: SymfonyField) {
 
   // Build column attribute arguments
   const columnArgs: Array<{ name?: string; value: string }> = [
-    { name: "type", value: `"${type}"` }
+    { name: "type", value: `"${type}"` },
   ];
 
   if (length) columnArgs.push({ name: "length", value: length.toString() });
@@ -187,7 +213,8 @@ function SymfonyFieldProperty(props: SymfonyField) {
   if (columnName && columnName !== name) {
     columnArgs.push({ name: "name", value: `"${columnName}"` });
   }
-  if (precision) columnArgs.push({ name: "precision", value: precision.toString() });
+  if (precision)
+    columnArgs.push({ name: "precision", value: precision.toString() });
   if (scale) columnArgs.push({ name: "scale", value: scale.toString() });
 
   // Determine PHP type
@@ -241,7 +268,7 @@ function SymfonyRelationshipProperty(props: SymfonyRelationship) {
     joinTable,
     cascade,
     fetch,
-    orphanRemoval
+    orphanRemoval,
   } = props;
 
   const namePolicy = usePhpNamePolicy();
@@ -249,16 +276,22 @@ function SymfonyRelationshipProperty(props: SymfonyRelationship) {
 
   // Build relationship attribute arguments
   const relationshipArgs: Array<{ name?: string; value: string }> = [
-    { name: "targetEntity", value: `${targetEntity}::class` }
+    { name: "targetEntity", value: `${targetEntity}::class` },
   ];
 
-  if (mappedBy) relationshipArgs.push({ name: "mappedBy", value: `"${mappedBy}"` });
-  if (inversedBy) relationshipArgs.push({ name: "inversedBy", value: `"${inversedBy}"` });
+  if (mappedBy)
+    relationshipArgs.push({ name: "mappedBy", value: `"${mappedBy}"` });
+  if (inversedBy)
+    relationshipArgs.push({ name: "inversedBy", value: `"${inversedBy}"` });
   if (cascade?.length) {
-    relationshipArgs.push({ name: "cascade", value: `[${cascade.map(c => `"${c}"`).join(", ")}]` });
+    relationshipArgs.push({
+      name: "cascade",
+      value: `[${cascade.map((c) => `"${c}"`).join(", ")}]`,
+    });
   }
   if (fetch) relationshipArgs.push({ name: "fetch", value: `"${fetch}"` });
-  if (orphanRemoval) relationshipArgs.push({ name: "orphanRemoval", value: "true" });
+  if (orphanRemoval)
+    relationshipArgs.push({ name: "orphanRemoval", value: "true" });
 
   // Determine PHP type
   let phpType = "mixed";
@@ -281,9 +314,14 @@ function SymfonyRelationshipProperty(props: SymfonyRelationship) {
           name="JoinColumn"
           arguments={[
             { name: "name", value: `"${joinColumn.name}"` },
-            ...(joinColumn.referencedColumnName ? 
-              [{ name: "referencedColumnName", value: `"${joinColumn.referencedColumnName}"` }] : 
-              [])
+            ...(joinColumn.referencedColumnName ?
+              [
+                {
+                  name: "referencedColumnName",
+                  value: `"${joinColumn.referencedColumnName}"`,
+                },
+              ]
+            : []),
           ]}
         />
       )}
@@ -293,11 +331,7 @@ function SymfonyRelationshipProperty(props: SymfonyRelationship) {
           arguments={[{ name: "name", value: `"${joinTable.name}"` }]}
         />
       )}
-      <Property
-        name={propertyName}
-        visibility="private"
-        type={phpType}
-      />
+      <Property name={propertyName} visibility="private" type={phpType} />
     </>
   );
 }
@@ -353,7 +387,7 @@ function SymfonyFieldMethods(props: SymfonyField) {
         visibility="public"
         returnType={getterReturnType}
       >
-        return $this->{propertyName};
+        {`return $this->${propertyName};`}
       </Method>
 
       {/* Setter */}
@@ -363,9 +397,9 @@ function SymfonyFieldMethods(props: SymfonyField) {
         parameters={[{ name: "value", type: setterParamType }]}
         returnType="self"
       >
-        $this->{propertyName} = $value;
-        
-        return $this;
+        {`$this->${propertyName} = $value;`}
+
+        {`return $this;`}
       </Method>
     </>
   );
@@ -391,7 +425,7 @@ function SymfonyRelationshipMethods(props: SymfonyRelationship) {
           visibility="public"
           returnType={`?${targetEntity}`}
         >
-          return $this->{propertyName};
+          {`return $this->${propertyName};`}
         </Method>
 
         <Method
@@ -400,9 +434,9 @@ function SymfonyRelationshipMethods(props: SymfonyRelationship) {
           parameters={[{ name: "value", type: `?${targetEntity}` }]}
           returnType="self"
         >
-          $this->{propertyName} = $value;
-          
-          return $this;
+          {`$this->${propertyName} = $value;`}
+
+          {`return $this;`}
         </Method>
       </>
     );
@@ -419,7 +453,7 @@ function SymfonyRelationshipMethods(props: SymfonyRelationship) {
           visibility="public"
           returnType={`Collection<int, ${targetEntity}>`}
         >
-          return $this->{propertyName};
+          {`return $this->${propertyName};`}
         </Method>
 
         <Method
@@ -428,11 +462,11 @@ function SymfonyRelationshipMethods(props: SymfonyRelationship) {
           parameters={[{ name: "item", type: targetEntity }]}
           returnType="self"
         >
-          if (!$this->{propertyName}->contains($item)) {"{"}
-              $this->{propertyName}->add($item);
-          {"}"}
-          
-          return $this;
+          {`if (!$this->${propertyName}->contains($item)) {`}
+          {`$this->${propertyName}->add($item);`}
+          {`}`}
+
+          {`return $this;`}
         </Method>
 
         <Method
@@ -441,9 +475,9 @@ function SymfonyRelationshipMethods(props: SymfonyRelationship) {
           parameters={[{ name: "item", type: targetEntity }]}
           returnType="self"
         >
-          $this->{propertyName}->removeElement($item);
-          
-          return $this;
+          {`$this->${propertyName}->removeElement($item);`}
+
+          {`return $this;`}
         </Method>
       </>
     );
@@ -459,13 +493,9 @@ function SymfonyLifecycleMethod(props: SymfonyLifecycleCallback) {
   return (
     <>
       <Attribute name={event} />
-      <Method
-        name={method}
-        visibility="public"
-        returnType="void"
-      >
+      <Method name={method} visibility="public" returnType="void">
         // TODO: Implement {event} logic
       </Method>
     </>
   );
-} 
+}

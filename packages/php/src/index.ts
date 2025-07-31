@@ -6,8 +6,5 @@ export * from "./symbols/index.js";
 export * as Laravel from "./integrations/Laravel.js";
 export * as Symfony from "./integrations/Symfony.js";
 
-// Phase 8: Quality Tools
-export * as Quality from "./quality/PsrCompliance.js";
-
 // Phase 8: Code Templates
 export * as Templates from "./templates/CodeTemplates.js";

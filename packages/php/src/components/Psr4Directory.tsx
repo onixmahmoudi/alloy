@@ -133,7 +133,6 @@ export function Psr4Structure(props: Psr4StructureProps) {
       {/* Custom directories */}
       {customDirectories.map((dir) => (
         <Psr4Directory
-          key={dir}
           namespace={`${rootNamespace}\\${dir.replace(/\//g, "\\")}`}
         />
       ))}
