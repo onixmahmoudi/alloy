@@ -11,7 +11,10 @@ packages/docs/dist-build
 packages/docs/public
 packages/docs/docs
 packages/docs/src
+packages/csharp/src/builtins
 
 
 .chronus/changes/
 CHANGELOG.md
+
+*.generated.*

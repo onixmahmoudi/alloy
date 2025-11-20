@@ -25,14 +25,17 @@ export {
 export * from "./binder.js";
 export * from "./code.js";
 export * from "./components/index.js";
+export * from "./content-slot.js";
 export * from "./context.js";
 export * from "./context/index.js";
+export * from "./library-symbol-reference.js";
 export * from "./name-policy.js";
 export * from "./props-combinators.js";
 export * from "./reactive-union-set.js";
 export * from "./reactivity.js";
 export * from "./refkey.js";
 export * from "./render.js";
+export * from "./resource.js";
 export * from "./runtime/component.js";
 export * from "./runtime/intrinsic.js";
 export * from "./stc.js";

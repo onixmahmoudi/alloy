@@ -1,52 +1,95 @@
 import {
   Children,
   code,
+  createSymbolSlot,
   Declaration,
   For,
   Indent,
-  OutputSymbol,
-  refkey,
+  Namekey,
   Refkey,
 } from "@alloy-js/core";
-import { useCSharpNamePolicy } from "../../name-policy.js";
-import { CSharpOutputSymbol } from "../../symbols/csharp-output-symbol.js";
-import { useCSharpScope } from "../../symbols/scopes.js";
+import { createParameterSymbol } from "../../symbols/factories.js";
+import { AttributeList, AttributesProp } from "../attributes/attributes.jsx";
 import { Name } from "../Name.jsx";
 
 export interface ParameterProps {
-  name: string;
+  name: string | Namekey;
   type: Children;
   /** If the parmaeter is optional(without default value) */
   optional?: boolean;
   /** Default value for the parameter */
   default?: Children;
+
   refkey?: Refkey;
-  symbol?: OutputSymbol;
+
+  /**
+   * Parameter modifier: The argument must be initialized before calling the method. The method can't assign a new value to the parameter. The compiler might create a temporary variable to hold a copy of the argument to in parameters.
+   * @see https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/method-parameters#in-parameter-modifier
+   * */
+  in?: boolean;
+  /**
+   * Parameter modifier: The calling method isn't required to initialize the argument before calling the method. The method must assign a value to the parameter.
+   * @see https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/method-parameters#out-parameter-modifier
+   * */
+  out?: boolean;
+  /**
+   * Parameter modifier: The argument must be initialized before calling the method. The method can assign a new value to the parameter, but isn't required to do so.
+   * @see https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/method-parameters#ref-parameter-modifier
+   */
+  ref?: boolean;
+  /**
+   * Parameter modifier: The argument must be initialized before calling the method. The method can't assign a new value to the parameter.
+   * @see https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/method-parameters#ref-readonly-modifier
+   */
+  refReadonly?: boolean;
+
+  /**
+   * Define attributes to attach
+   * @example
+   * ```tsx
+   * <Parameter name="foo" type="string" attributes={[
+   *  <Attribute name="Test" />
+   * ]}>
+   * ```
+   * This will produce:
+   * ```csharp
+   * [Test] string foo
+   * ```
+   */
+  attributes?: AttributesProp;
 }
 
 /** Define a parameter to be used in class or interface method. */
 export function Parameter(props: ParameterProps) {
-  const name = useCSharpNamePolicy().getName(props.name, "parameter");
-  const scope = useCSharpScope();
-  if (
-    scope.kind !== "member" ||
-    (scope.name !== "constructor-decl" &&
-      scope.name !== "method-decl" &&
-      scope.name !== "class-decl")
-  ) {
-    throw new Error(
-      "can't define a parameter outside of a constructor-decl or method-decl scope",
-    );
-  }
+  const TypeSlot = createSymbolSlot();
 
-  const memberSymbol = new CSharpOutputSymbol(name, {
-    scope,
-    refkeys: props.refkey ?? refkey(props.name),
+  const memberSymbol = createParameterSymbol(props.name, {
+    refkeys: props.refkey,
+    type: TypeSlot.firstSymbol,
+    isNullable: props.optional,
   });
 
+  // Only one of in, out, ref, ref readonly can be specified
+  const modifiers: (keyof ParameterProps)[] = (
+    ["in", "out", "ref", "refReadonly"] as (keyof ParameterProps)[]
+  ).filter((k) => props[k]);
+
+  if (modifiers.length > 1) {
+    throw new Error(
+      `Only one of 'in', 'out', 'ref', 'ref readonly' can be specified for parameter '${
+        typeof props.name === "string" ? props.name : props.name.name
+      }'`,
+    );
+  }
+  const modifier =
+    modifiers.length === 0 ? ""
+    : modifiers[0] === "refReadonly" ? "ref readonly "
+    : modifiers[0] + " ";
   return (
     <Declaration symbol={memberSymbol}>
-      {props.type}
+      <AttributeList attributes={props.attributes} endline />
+      <>{modifier}</>
+      <TypeSlot>{props.type}</TypeSlot>
       {props.optional ? "?" : ""} <Name />
       {props.default ? code` = ${props.default}` : ""}
     </Declaration>
@@ -63,9 +106,14 @@ export function Parameters(props: ParametersProps) {
     <group>
       {"("}
       {props.parameters && (
-        <Indent softline>
+        <Indent nobreak>
           <For each={props.parameters} joiner={", "}>
-            {(param) => <Parameter {...param} />}
+            {(param) => (
+              <>
+                <softline />
+                <Parameter {...param} />
+              </>
+            )}
           </For>
         </Indent>
       )}

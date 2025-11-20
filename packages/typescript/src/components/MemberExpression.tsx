@@ -30,9 +30,15 @@ interface PartDescriptorWithIndex extends PartDescriptorBase {
 }
 interface PartDescriptorBase {
   accessStyle: "dot" | "bracket";
+  jsPrivate: boolean;
   quoteId: boolean;
   nullish: boolean;
+  type: boolean;
   args?: Children[];
+  /**
+   * Whether to await the value that results from this part of the member expression.
+   */
+  await?: boolean;
 }
 
 type PartDescriptor = PartDescriptorWithId | PartDescriptorWithIndex;
@@ -45,7 +51,8 @@ type PartDescriptor = PartDescriptorWithId | PartDescriptorWithIndex;
  * * **refkey**: a refkey for a symbol whose name becomes the identifier
  * * **symbol**: a symbol whose name becomes the identifier part
  * * **args**: create a method call with the given args
- * * **children**: arbitrary contents for the identifier part.
+ * * **children**: arbitrary contents for the identifier part
+ * * **await**: whether to await the value that results from this part of the member expression
  *
  * Each part can have a nullish prop, which indicates that the part may be null
  * or undefined.
@@ -86,6 +93,10 @@ export function MemberExpression(props: MemberExpressionProps): Children {
   }
 
   const isCallChain = computed(() => {
+    for (const part of parts) {
+      if (part.await) return false;
+    }
+
     let callCount = 0;
     for (const part of parts) {
       if (part.args !== undefined) callCount++;
@@ -233,6 +244,19 @@ function createPartDescriptorFromProps(
       return false;
     }),
     args: ref<any>(partProps.args === true ? [] : partProps.args),
+    jsPrivate: computed(() => {
+      return (
+        !!symbolSource.value &&
+        (symbolSource.value as TSOutputSymbol).isPrivateMemberSymbol
+      );
+    }),
+    type: computed(() => {
+      return (
+        !!symbolSource.value &&
+        (symbolSource.value as TSOutputSymbol).isTypeSymbol
+      );
+    }),
+    await: computed(() => partProps.await),
   };
 
   return reactive(part);
@@ -375,25 +399,47 @@ function formatCallChain(parts: PartDescriptor[]): Children {
 
 function formatNonCallChain(parts: PartDescriptor[]): Children {
   return computed(() => {
-    const expression: Children[] = [];
+    let expression: Children = [];
 
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
       const base = isIdPartDescriptor(part) ? part.id : part.index;
       if (i === 0) {
-        expression.push(base);
+        (expression as Children[]).push(base);
       } else {
         // Determine if we should use nullish operator from previous part
         const prevPart = parts[i - 1];
+        let partExpr;
 
-        if (part.args !== undefined) {
+        if (prevPart.type) {
+          partExpr = formatArrayAccess(prevPart, part);
+        } else if (part.args !== undefined) {
           // For parts with only args (no name), append function call directly with appropriate nullish operator
-          expression.push(formatCallExpr(prevPart, part));
+          partExpr = formatCallExpr(prevPart, part);
         } else if (part.accessStyle === "dot") {
-          expression.push(formatDotAccess(prevPart, part));
+          partExpr = formatDotAccess(prevPart, part);
         } else {
           // bracket notation - don't include the dot
-          expression.push(formatArrayAccess(prevPart, part));
+          partExpr = formatArrayAccess(prevPart, part);
+        }
+
+        if (Array.isArray(expression)) {
+          expression.push(partExpr);
+        } else {
+          expression = (
+            <>
+              {expression}
+              {partExpr}
+            </>
+          );
+        }
+      }
+
+      if (part.await) {
+        if (i < parts.length - 1) {
+          expression = <>(await {expression})</>;
+        } else {
+          expression = <>await {expression}</>;
         }
       }
     }
@@ -405,12 +451,12 @@ function formatNonCallChain(parts: PartDescriptor[]): Children {
 function formatArrayAccess(prevPart: PartDescriptor, part: PartDescriptor) {
   return (
     <group>
-      {prevPart.nullish ? "?." : ""}[
+      {!prevPart.type && prevPart.nullish ? "?." : ""}[
       <indent>
         <sbr />
-        {part.quoteId && '"'}
+        {(prevPart.type || part.quoteId) && '"'}
         {isIdPartDescriptor(part) ? part.id : part.index}
-        {part.quoteId && '"'}
+        {(prevPart.type || part.quoteId) && '"'}
       </indent>
       <sbr />]
     </group>
@@ -423,7 +469,11 @@ function formatDotAccess(prevPart: PartDescriptor, part: PartDescriptor) {
       <indent>
         <sbr />
         {prevPart.nullish ? "?." : "."}
-        {isIdPartDescriptor(part) ? part.id : part.index}
+        {isIdPartDescriptor(part) ?
+          part.jsPrivate ?
+            `#${part.id}`
+          : part.id
+        : part.index}
       </indent>
     </group>
   );
@@ -505,6 +555,11 @@ export interface MemberExpressionPartProps {
   args?: Children[] | boolean;
 
   /**
+   * Whether to await the value that results from this part of the member expression.
+   */
+  await?: boolean;
+
+  /**
    * This part is nullish. Subsequent parts use conditional access operators.
    */
   nullish?: boolean;
@@ -523,7 +578,8 @@ export interface MemberExpressionPartProps {
  * * **refkey**: A refkey for a symbol whose name becomes the identifier
  * * **symbol**: a symbol whose name becomes the identifier part
  * * **args**: create a method call with the given args
- * * **children**: arbitrary contents for the identifier part.
+ * * **children**: arbitrary contents for the identifier part
+ * * **await**: whether to await the value that results from this part of the member expression
  *
  * Each part can have a nullish prop, which indicates that the part may be null
  * or undefined.

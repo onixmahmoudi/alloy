@@ -44,6 +44,8 @@ const apiPackages = {
   csharp: apiModel.loadPackage(apiPath(resolve(packagesPath, "csharp"))),
   java: apiModel.loadPackage(apiPath(resolve(packagesPath, "java"))),
   json: apiModel.loadPackage(apiPath(resolve(packagesPath, "json"))),
+  python: apiModel.loadPackage(apiPath(resolve(packagesPath, "python"))),
+  go: apiModel.loadPackage(apiPath(resolve(packagesPath, "go"))),
 };
 
 function apiPath(packagePath: string) {

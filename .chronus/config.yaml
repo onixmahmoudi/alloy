@@ -32,9 +32,11 @@ versionPolicies:
       - "@alloy-js/csharp"
       - "@alloy-js/typescript"
       - "@alloy-js/php"
+      - "@alloy-js/python"
       - "@alloy-js/create"
       - "@alloy-js/cli"
       - "@alloy-js/markdown"
+      - "@alloy-js/msbuild"
 
 changedFiles:
   - "!**/*.md"

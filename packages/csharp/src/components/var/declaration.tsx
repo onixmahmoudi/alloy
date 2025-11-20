@@ -1,12 +1,21 @@
-import { Children, DeclarationProps, Name, Refkey } from "@alloy-js/core";
-import { useCSharpNamePolicy } from "../../name-policy.js";
-import { Declaration } from "../Declaration.jsx";
+import {
+  Children,
+  createSymbolSlot,
+  Declaration,
+  DeclarationProps,
+  Name,
+  Namekey,
+  Refkey,
+} from "@alloy-js/core";
+import { computeModifiersPrefix, makeModifiers } from "../../modifiers.js";
+import { createVariableSymbol } from "../../symbols/factories.js";
 
 /** Props for {@link VarDeclaration} component */
 export interface VarDeclarationProps
-  extends Omit<DeclarationProps, "nameKind"> {
+  extends Omit<DeclarationProps, "nameKind">,
+    VarModifiers {
   /** Variable name */
-  name: string;
+  name: string | Namekey;
   /** Type of the variable declaration. If not specified, defaults to "var" */
   type?: Children;
   /** Variable refkey */
@@ -14,6 +23,16 @@ export interface VarDeclarationProps
   /** Variable value */
   children?: Children;
 }
+
+export interface VarModifiers {
+  /** Constant variable. Add the const modifier. */
+  readonly const?: boolean;
+
+  /** Disposable variable. Add the using modifier. */
+  readonly using?: boolean;
+}
+
+const getModifiers = makeModifiers<VarModifiers>(["const", "using"]);
 
 /**
  * Render a variable declaration
@@ -37,11 +56,22 @@ export interface VarDeclarationProps
  * ```
  */
 export function VarDeclaration(props: VarDeclarationProps) {
-  const name = useCSharpNamePolicy().getName(props.name, "variable");
+  const TypeSlot = createSymbolSlot();
+  const ValueSlot = createSymbolSlot();
 
+  const sym = createVariableSymbol(props.name, {
+    refkeys: props.refkey,
+    type: props.type ? TypeSlot.firstSymbol : ValueSlot.firstSymbol,
+  });
+
+  if (props.const && !props.type) {
+    throw new Error("Implicitly-typed variables cannot be constant");
+  }
   return (
-    <Declaration name={name} refkey={props.refkey}>
-      {props.type ?? "var"} <Name /> = {props.children};
+    <Declaration symbol={sym}>
+      {computeModifiersPrefix([getModifiers(props)])}
+      <TypeSlot>{props.type ?? "var"}</TypeSlot> <Name /> ={" "}
+      <ValueSlot>{props.children}</ValueSlot>;
     </Declaration>
   );
 }

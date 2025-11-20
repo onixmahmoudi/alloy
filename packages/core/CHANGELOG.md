@@ -1,5 +1,47 @@
 # Changelog - @alloy-js/core
 
+## 0.21.0
+
+### Bug Fixes
+
+- [#315](https://github.com/alloy-framework/alloy/pull/315) Fix For component and mapJoin with sets.
+- [#315](https://github.com/alloy-framework/alloy/pull/315) Fix immediately recursive reactives.
+- [#315](https://github.com/alloy-framework/alloy/pull/315) toRefkey is now untracked, preventing unintended effect triggering.
+- [#314](https://github.com/alloy-framework/alloy/pull/314) Fix broken testing exports
+- [#282](https://github.com/alloy-framework/alloy/pull/282) `<Unresolved symbol>` include the refkey information for easier debugging
+
+### Features
+
+- [#295](https://github.com/alloy-framework/alloy/pull/295) Added a new type of Refkey: Refkeyable. Refkeyables are objects which implement the REFKEYABLE symbol method to return a Refkey. Refkeyables are accepted in many places. When a Refkey is needed, the `toRefkey` function can be used.
+- [#295](https://github.com/alloy-framework/alloy/pull/295) `memberRefkey` can now take a string for member names. It will look up a member with that name.
+- [#295](https://github.com/alloy-framework/alloy/pull/295) Add LibrarySymbolReference, a special kind of refkeyable object that supports lazy initialization of library symbols.
+- [#295](https://github.com/alloy-framework/alloy/pull/295) Added OutputSymbol#lazyMemberInitializer, which can be used to delay initialization of a symbol's members until they are needed.
+- [#295](https://github.com/alloy-framework/alloy/pull/295) Added OutputSymbol#resolveMemberByName, which can be used to find a member by name. By default it will look in all member spaces, but subtypes can implement their own behavior.
+- [#310](https://github.com/alloy-framework/alloy/pull/310) Add a general TestWrapper factory and TS specific factory
+- [#284](https://github.com/alloy-framework/alloy/pull/284) Name policy's element can now be undefined, which leaves the name as-is.
+- [#245](https://github.com/alloy-framework/alloy/pull/245) Adds a new type of Alloy child, CustomChildElement, that is based on the presence of a symbol property.
+
+
+## 0.20.0
+
+### Bug Fixes
+
+- [#268](https://github.com/alloy-framework/alloy/pull/268) Add export for resource APIs
+- [#265](https://github.com/alloy-framework/alloy/pull/265) Connect `componentOwner` in the context tree
+- [#269](https://github.com/alloy-framework/alloy/pull/269) writeOutput will write files sequentially instead of in parallel to avoid race conditions where directories aren't created before files are attempted to be written to them.
+
+### Features
+
+- [#276](https://github.com/alloy-framework/alloy/pull/276) Add `symbolForRefkey` API to get a ref to a symbol with the given refkey, using the binder from context.
+- [#277](https://github.com/alloy-framework/alloy/pull/277) Add `FormatOptions` component to provide global override for format configuration
+- [#278](https://github.com/alloy-framework/alloy/pull/278) Insert final new line by default in source files. Added `insertFinalNewLine` formatting option to disable.
+- [#206](https://github.com/alloy-framework/alloy/pull/206) Add `namekey`, a kind of refkey which you can provide a name and use in place of a string. This sets the name of the symbol and serves as a refkey for that symbol.
+
+### Breaking Changes
+
+- [#206](https://github.com/alloy-framework/alloy/pull/206) Update core's representation of symbols and scopes. These changes should not impact usage of language components in code generators, but there are some significant changes for language library implementations. See https://github.com/alloy-framework/alloy/pull/206 for more details.
+
+
 ## 0.19.0
 
 ### Bug Fixes

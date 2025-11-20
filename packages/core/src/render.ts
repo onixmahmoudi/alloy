@@ -1,4 +1,4 @@
-import { isRef } from "@vue/reactivity";
+import { isRef, ref } from "@vue/reactivity";
 import { Doc, doc } from "prettier";
 import prettier from "prettier/doc.js";
 import { useContext } from "./context.js";
@@ -14,13 +14,15 @@ import {
   root,
   untrack,
 } from "./reactivity.js";
-import { isRefkey } from "./refkey.js";
+import { isRefkeyable, toRefkey } from "./refkey.js";
 import {
   Child,
   Children,
   Component,
   isComponentCreator,
+  isRenderableObject,
   Props,
+  RENDERABLE,
 } from "./runtime/component.js";
 import { IntrinsicElement, isIntrinsicElement } from "./runtime/intrinsic.js";
 import { flushJobs, flushJobsAsync } from "./scheduler.js";
@@ -208,13 +210,6 @@ export function sourceFilesForTree(
 ): OutputDirectory {
   let rootDirectory: OutputDirectory | undefined = undefined;
 
-  // when passing Output, the first render tree child is the Output component.
-  const rootRenderOptions =
-    Array.isArray(tree) ?
-      (getContextForRenderNode(tree[0] as RenderedTextTree)?.meta
-        ?.printOptions ?? {})
-    : {};
-
   collectSourceFiles(undefined, tree);
 
   if (!rootDirectory) {
@@ -265,17 +260,13 @@ export function sourceFilesForTree(
         filetype: context.meta?.sourceFile.filetype,
         contents: printTree(root, {
           printWidth:
-            options?.printWidth ??
-            context.meta?.printOptions?.printWidth ??
-            rootRenderOptions.printWidth,
-          tabWidth:
-            options?.tabWidth ??
-            context.meta?.printOptions?.tabWidth ??
-            rootRenderOptions.tabWidth,
-          useTabs:
-            options?.useTabs ??
-            context.meta?.printOptions?.useTabs ??
-            rootRenderOptions.useTabs,
+            options?.printWidth ?? context.meta?.printOptions?.printWidth,
+          tabWidth: options?.tabWidth ?? context.meta?.printOptions?.tabWidth,
+          useTabs: options?.useTabs ?? context.meta?.printOptions?.useTabs,
+          insertFinalNewLine:
+            options?.insertFinalNewLine ??
+            context.meta?.printOptions?.insertFinalNewLine ??
+            true,
         }),
       };
 
@@ -341,11 +332,74 @@ function renderWorker(node: RenderedTextTree, children: Children) {
   }
 }
 
+function contentAdded() {
+  const context: Context = getContext()!;
+  context.childrenWithContent++;
+}
+
+export function notifyContentState() {
+  untrack(() => {
+    const startContext = getContext()!;
+
+    if (startContext.childrenWithContent === 0) {
+      if (startContext.isEmpty!.value === true) {
+        // it was already empty, no work to do.
+        return;
+      }
+
+      if (startContext.isEmpty) {
+        startContext.isEmpty.value = true;
+      }
+
+      // otherwise we need to decrement the content counts up the tree.
+      let current = startContext.owner;
+      while (current) {
+        if (current.childrenWithContent === 0) {
+          break;
+        }
+        current.childrenWithContent--;
+        if (current.isEmpty) {
+          current.isEmpty.value = true;
+        }
+        current = current.owner;
+      }
+    } else {
+      if (startContext.isEmpty!.value === false) {
+        // it was already non-empty, no work to do.
+        return;
+      }
+
+      if (startContext.isEmpty && startContext.isEmpty.value) {
+        startContext.isEmpty.value = false;
+      }
+
+      // otherwise we need to increment the content counts up the tree.
+      let current = startContext.owner;
+      while (current) {
+        current.childrenWithContent++;
+        if (current.childrenWithContent > 1) {
+          // This isn't the first content so we have no work to do
+          break;
+        }
+
+        if (current.isEmpty && current.isEmpty.value) {
+          current.isEmpty.value = false;
+        }
+
+        current = current.owner;
+      }
+    }
+  });
+}
+
 function appendChild(node: RenderedTextTree, rawChild: Child) {
   trace(TracePhase.render.appendChild, () => debugPrintChild(rawChild));
   const child = normalizeChild(rawChild);
 
   if (typeof child === "string") {
+    if (child !== "") {
+      contentAdded();
+    }
     node.push(child);
   } else {
     const cache = getElementCache();
@@ -367,6 +421,7 @@ function appendChild(node: RenderedTextTree, rawChild: Child) {
         renderWorker(newNode, children);
         node.push(newNode);
         cache.set(child, newNode);
+        notifyContentState();
       });
     } else if (isIntrinsicElement(child)) {
       trace(
@@ -490,20 +545,31 @@ function appendChild(node: RenderedTextTree, rawChild: Child) {
           throw new Error("Unknown intrinsic element");
       }
     } else if (isComponentCreator(child)) {
+      // todo: remove this effect (only needed for context, not needed for anything else)
       effect(() => {
         trace(
           TracePhase.render.appendChild,
           () => "Component: " + debugPrintChild(child),
         );
+        const context = getContext();
+        context!.childrenWithContent = 0;
+        context!.isEmpty ??= ref(true);
+
+        if (context) context.componentOwner = child;
         const componentRoot: RenderedTextTree = [];
         pushStack(child.component, child.props);
         renderWorker(componentRoot, untrack(child));
         popStack();
         node.push(componentRoot);
         cache.set(child, componentRoot);
+        notifyContentState();
         trace(
           TracePhase.render.appendChild,
-          () => "Component done: " + debugPrintChild(child),
+          () =>
+            "Component done: " +
+            debugPrintChild(child) +
+            ", empty: " +
+            context!.isEmpty!.value,
         );
       });
     } else if (typeof child === "function") {
@@ -515,10 +581,16 @@ function appendChild(node: RenderedTextTree, rawChild: Child) {
         while (typeof res === "function" && !isComponentCreator(res)) {
           res = res();
         }
+        const context = getContext();
+        context!.childrenWithContent = 0;
+        context!.isEmpty ??= ref(true);
+
         const newNodes: RenderedTextTree = [];
         renderWorker(newNodes, res);
         node[index] = newNodes;
         cache.set(child, newNodes);
+
+        notifyContentState();
         return newNodes;
       });
     } else {
@@ -547,15 +619,19 @@ function normalizeChild(child: Child): NormalizedChildren {
     return "";
   } else if (isRef(child)) {
     return () => child.value as () => Child;
-  } else if (isRefkey(child)) {
+  } else if (isRefkeyable(child)) {
+    const refkey = toRefkey(child);
     return () => {
       const sfContext = useContext(SourceFileContext);
       if (!sfContext || !sfContext.reference) {
         throw new Error("Can only emit references inside of source files");
       }
 
-      return sfContext.reference({ refkey: child });
+      return sfContext.reference({ refkey });
     };
+  } else if (isRenderableObject(child)) {
+    // For custom renderable objects, we will just normalize them to a bound function.
+    return child[RENDERABLE].bind(child);
   } else if (isCustomContext(child)) {
     return child;
   } else if (isIntrinsicElement(child)) {
@@ -581,6 +657,10 @@ function debugPrintChild(child: Children): string {
     return "$ref";
   } else if (isIntrinsicElement(child)) {
     return `<${child.name}>`;
+  } else if (isRenderableObject(child)) {
+    return `CustomChildElement(${JSON.stringify(child)})`;
+  } else if (isRefkeyable(child)) {
+    return `refkey`;
   } else {
     return JSON.stringify(child);
   }
@@ -602,6 +682,12 @@ export interface PrintTreeOptions {
    * The number of spaces to use for indentation. Defaults to 2 spaces.
    */
   tabWidth?: number;
+
+  /**
+   * If files should end with a final new line.
+   * @default true
+   */
+  insertFinalNewLine?: boolean;
 }
 
 const defaultPrintTreeOptions: PrintTreeOptions = {
@@ -621,8 +707,14 @@ export function printTree(tree: RenderedTextTree, options?: PrintTreeOptions) {
   flushJobs();
 
   const d = printTreeWorker(tree);
-  return doc.printer.printDocToString(d, options as doc.printer.Options)
-    .formatted;
+  const result = doc.printer.printDocToString(
+    d,
+    options as doc.printer.Options,
+  ).formatted;
+
+  return options.insertFinalNewLine && !result.endsWith("\n") ?
+      `${result}\n`
+    : result;
 }
 
 function printTreeWorker(tree: RenderedTextTree): Doc {

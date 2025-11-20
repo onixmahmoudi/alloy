@@ -1,21 +1,23 @@
 import {
-  AssignmentContext,
   Block,
   Children,
   computed,
-  createAssignmentContext,
   emitSymbol,
   For,
+  isNamekey,
   Match,
-  MemberScope,
   moveTakenMembersTo,
-  OutputSymbolFlags,
+  Namekey,
   Refkey,
   Switch,
   takeSymbols,
 } from "@alloy-js/core";
 import { useTSNamePolicy } from "../name-policy.js";
-import { TSOutputSymbol } from "../symbols/ts-output-symbol.js";
+import {
+  createStaticMemberSymbol,
+  createTransientValueSymbol,
+} from "../symbols/index.js";
+import { MemberScope } from "./MemberScope.jsx";
 import { PropertyName } from "./PropertyName.jsx";
 import { ValueExpression } from "./ValueExpression.js";
 
@@ -28,12 +30,10 @@ export interface ObjectExpressionProps {
 }
 
 export function ObjectExpression(props: ObjectExpressionProps) {
-  const symbol = new TSOutputSymbol("", {
-    flags:
-      OutputSymbolFlags.StaticMemberContainer | OutputSymbolFlags.Transient,
-  });
+  const symbol = createTransientValueSymbol();
 
   emitSymbol(symbol);
+  moveTakenMembersTo(symbol);
 
   const jsValueProperties = computed(() => {
     const jsValue = props.jsValue;
@@ -59,7 +59,7 @@ export function ObjectExpression(props: ObjectExpressionProps) {
       </Match>
       <Match else>
         <group>
-          <MemberScope owner={symbol}>
+          <MemberScope ownerSymbol={symbol}>
             <Block>
               <For each={jsValueProperties} comma softline enderPunctuation>
                 {([name, value]) => (
@@ -70,7 +70,7 @@ export function ObjectExpression(props: ObjectExpressionProps) {
                 <>
                   {jsValueProperties.value.length > 0 && (
                     <>
-                      ,<sbr />
+                      <sbr />
                     </>
                   )}
                   {props.children}
@@ -85,7 +85,7 @@ export function ObjectExpression(props: ObjectExpressionProps) {
 }
 
 export interface ObjectPropertyProps {
-  name?: string;
+  name?: string | Namekey;
   nameExpression?: Children;
   value?: Children;
   jsValue?: unknown;
@@ -94,29 +94,31 @@ export interface ObjectPropertyProps {
 }
 
 export function ObjectProperty(props: ObjectPropertyProps) {
-  let name;
-  let symbolName = props.name;
-  if (props.name) {
-    const namer = useTSNamePolicy();
-    symbolName = namer.getName(props.name, "object-member-data");
-    name = <PropertyName name={symbolName} />;
+  let sym = undefined;
+
+  if (isNamekey(props.name) || (props.refkey && props.name)) {
+    sym = createStaticMemberSymbol(props.name, {
+      refkeys: props.refkey,
+      namePolicy: useTSNamePolicy().for("object-member-data"),
+    });
+
+    moveTakenMembersTo(sym);
+    emitSymbol(sym);
+  } else {
+    // noop
+    takeSymbols();
+  }
+
+  let name: Children;
+  if (sym) {
+    name = <PropertyName name={sym.name} />;
+  } else if (props.name) {
+    // can't be a namekey if we get here
+    name = <PropertyName name={props.name as string} />;
   } else if (props.nameExpression) {
     name = <>[{props.nameExpression}]</>;
   } else {
     throw new Error("ObjectProperty either a name or a nameExpression.");
-  }
-
-  let sym = undefined;
-  if (props.refkey && props.name) {
-    sym = new TSOutputSymbol(symbolName!, {
-      refkeys: props.refkey,
-      flags: OutputSymbolFlags.StaticMember,
-    });
-
-    moveTakenMembersTo(sym);
-  } else {
-    // noop
-    takeSymbols();
   }
 
   let value;
@@ -129,14 +131,9 @@ export function ObjectProperty(props: ObjectPropertyProps) {
     value = props.children;
   }
 
-  const assignmentContext: AssignmentContext | undefined =
-    sym ? createAssignmentContext(sym) : undefined;
   return (
     <>
-      {name}:{" "}
-      <AssignmentContext.Provider value={assignmentContext}>
-        {value}
-      </AssignmentContext.Provider>
+      {name}: {value}
     </>
   );
 }

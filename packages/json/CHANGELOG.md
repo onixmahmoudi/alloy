@@ -1,5 +1,19 @@
 # Changelog - @alloy-js/json
 
+## 0.21.0
+
+### Bug Fixes
+
+- [#282](https://github.com/alloy-framework/alloy/pull/282) `<Unresolved symbol>` include the refkey information for easier debugging
+
+
+## 0.20.0
+
+### Breaking Changes
+
+- [#206](https://github.com/alloy-framework/alloy/pull/206) Update core's representation of symbols and scopes. These changes should not impact usage of language components in code generators, but there are some significant changes for language library implementations. See https://github.com/alloy-framework/alloy/pull/206 for more details.
+
+
 ## 0.19.0
 
 ### Features

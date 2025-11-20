@@ -1,15 +1,13 @@
+import { normalizeAttributeName } from "#components/access-expression/part-descriptors.js";
 import {
   Children,
   findKeyedChildren,
   For,
   Indent,
+  Refkeyable,
   taggedComponent,
 } from "@alloy-js/core";
-
-export interface AttributeItem {
-  name: string;
-  args?: string[];
-}
+import { ReferenceContext } from "../../contexts/reference-context.js";
 
 export type AttributesProp = Array<string | AttributeProps | Children>;
 
@@ -54,7 +52,7 @@ function renderAttribute(attr: string | AttributeProps | Children): Children {
 
 export interface AttributeProps {
   /** Attribute name */
-  name: Children;
+  name: string | Refkeyable;
 
   /** Argument */
   args?: Children[];
@@ -81,7 +79,8 @@ export const Attribute = taggedComponent(
   (props: AttributeProps) => {
     return (
       <group>
-        [{props.name}
+        [
+        <AttributeName name={props.name} />
         {props.args && props.args.length > 0 && (
           <>
             (
@@ -98,3 +97,11 @@ export const Attribute = taggedComponent(
     );
   },
 );
+
+function AttributeName(props: Pick<AttributeProps, "name">) {
+  return typeof props.name === "string" ?
+      normalizeAttributeName(props.name)
+    : <ReferenceContext.Provider value={"attribute"}>
+        {props.name}
+      </ReferenceContext.Provider>;
+}
